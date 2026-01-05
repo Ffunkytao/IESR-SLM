@@ -1,0 +1,26 @@
+# MCTS config for logiccat using tasks from MySQL preprocessor
+# Note: set ALPHASQL_SKIP_SQL_EXEC=1 to skip sqlite execution/validation during search
+
+tasks_file_path: "data/preprocessed/IeSlMRM_dev/dev/tasks.pkl"
+subset_file_path: null
+# db_root_dir is unused when ALPHASQL_SKIP_SQL_EXEC=1, but must be a valid path
+# you can keep it as the preprocessed root or any existing directory
+db_root_dir: "data/preprocessed/IeSlMRM_dev"
+
+n_processes: 32
+max_rollout_steps: 8
+max_depth: 8
+exploration_constant: 1.4
+save_root_dir: "results/IeSlMRM_dev/Qwen/Qwen2.5-Coder-7B-Instruct"
+
+mcts_model_kwargs:
+  model: "Qwen/Qwen2.5-Coder-7B-Instruct"  # 使用 vllm 服务器上实际注册的模型名称，可通过命令行参数覆盖
+  temperature: 0.7
+  top_p: 0.8
+  n: 1
+  max_tokens: 2048
+  # base_url/api_key come from env OPENAI_BASE_URL / OPENAI_API_KEY
+
+reward_model_kwargs: null
+random_seed: 42
+

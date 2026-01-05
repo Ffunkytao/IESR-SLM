@@ -1,0 +1,27 @@
+# Archer dataset preprocessing config for SQLite databases
+# Edit paths and thresholds as needed.
+
+data_file_path: "data/archer/train.json"  # Will be overridden by converted data in script
+database_root_dir: "data/archer/database"
+save_root_dir: "data/preprocessed/archer"
+split: "train"
+
+# LSH / retrieval params
+lsh_threshold: 0.5
+lsh_signature_size: 128
+lsh_n_gram: 3
+lsh_top_k: 20
+edit_similarity_threshold: 0.3
+embedding_similarity_threshold: 0.6
+n_parallel_processes: 4  # 减少并行数以避免模型加载冲突
+max_dataset_samples: -1
+
+# LLM options (set use_local_model false if you want to call OpenAI-compatible API via call_openai)
+use_local_model: true
+local_model_path: ""  # 通过环境变量 LLM_PATH 设置，或在此处指定本地模型路径
+local_model_device: "cuda:0"
+model_name: "Qwen/Qwen2.5-7B-Instruct"
+temperature: 0.7
+
+# Note: Archer uses SQLite databases, so no MySQL connection config needed
+

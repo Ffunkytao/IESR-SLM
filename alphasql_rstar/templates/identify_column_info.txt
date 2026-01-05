@@ -1,0 +1,100 @@
+You are an AI assistant to help me identify the potential column values and column functions (if needed to be used in the SQL query) that are essential for answering the question.
+
+Your task is to:
+1. Identify the specific column values that should be used in WHERE clauses or other filtering conditions
+2. Identify any column functions (like date functions, string functions, etc.) that might be needed for the SQL query
+
+**************************
+Example 1: Identifying Column Values
+
+Database Schema:
+CREATE TABLE generalinfo
+(
+	id_restaurant INTEGER not null primary key,
+	food_type TEXT null, -- Value Examples: `thai`| Column Description: the food type
+	city TEXT null, -- Column Description: the city where the restaurant is located in
+);
+
+CREATE TABLE location
+(
+	id_restaurant INTEGER not null primary key,
+	street_name TEXT null, -- Value Examples: `ave`, `san pablo ave`, `pablo ave`| Column Description: the street name of the restaurant
+	city TEXT null, -- Column Description: the city where the restaurant is located in
+	foreign key (id_restaurant) references generalinfo (id_restaurant) on update cascade on delete cascade,
+);
+
+Question:
+How many Thai restaurants can be found in San Pablo Ave, Albany? 
+
+Hint:
+Thai restaurant refers to food_type = 'thai'; San Pablo Ave Albany refers to street_name = 'san pablo ave' AND T1.city = 'albany'
+
+Answer:
+Since the restaurants are located in Albany, based on the schema information and the hint, I need to use `location`.`street_name` = 'san pablo ave' AND `generalinfo`.`city` = 'albany'.
+
+**************************
+Example 2: Identifying Column Functions
+
+Database Schema:
+CREATE TABLE businesses
+(
+    `business_id` INTEGER NOT NULL,
+    `name` TEXT NOT NULL, -- Column Description: the name of the eatery
+    PRIMARY KEY (`business_id`),
+);
+
+CREATE TABLE inspections
+(
+    `business_id` INTEGER NOT NULL, -- Column Description: the unique id of the business
+    `score` INTEGER DEFAULT NULL, -- Column Description: the inspection score
+    `date` TEXT NOT NULL, -- Value Examples: `2014-01-24`
+    FOREIGN KEY (`business_id`) REFERENCES `businesses` (`business_id`),
+);
+
+Question:
+What are the names of the businesses that passed with conditions in May 2012?
+
+Hint:
+name of business refers to dba_name; passed with conditions refers to results = 'Pass w/ Conditions'; in May 2012 refers to inspection_date like '2012-05%'
+
+Answer:
+Since the businesses passed with conditions in May 2012, I should consider a date-related function to filter the `inspections`.`date` column. I find that column is of type TEXT, so I can use the strftime('%Y-%m', `inspections`.`date`) = '2012-05' to filter the date.
+
+**************************
+Example 3: Identifying Both Column Values and Functions
+
+Database Schema:
+CREATE TABLE products
+(
+    `product_id` INTEGER NOT NULL,
+    `price` REAL, -- Column Description: product price in dollars
+    `discount_rate` REAL, -- Column Description: discount rate as percentage (0-100)
+    `quantity` INTEGER, -- Column Description: quantity purchased
+    `purchase_date` TEXT, -- Value Examples: `2023-05-15` | Column Description: purchase date
+    PRIMARY KEY (`product_id`)
+);
+
+Question:
+What is the total cost after applying a 10% discount for products with quantity greater than 5 purchased in May 2023?
+
+Hint:
+total cost after discount refers to (price * quantity) * (1 - discount_rate / 100); quantity greater than 5 refers to quantity > 5; May 2023 refers to purchase_date like '2023-05%'
+
+Answer:
+For column values, I need to filter products where quantity > 5. For column functions, I need to use strftime('%Y-%m', `products`.`purchase_date`) = '2023-05' to filter the date to May 2023. Additionally, I need to calculate the discounted cost using the formula (price * quantity) * (1 - discount_rate / 100.0).
+
+**************************
+
+Now, answer the real question, and you need to follow the answer style of the above examples. Your answer should cover both column values (if any) and column functions (if any) that are needed for the SQL query. Answer in 2-3 sentences.
+
+Database Schema:
+{SCHEMA_CONTEXT}
+
+Question:
+{QUESTION}
+
+Hint:
+{HINT}
+
+Answer:
+

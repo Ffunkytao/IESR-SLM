@@ -1,0 +1,89 @@
+#!/bin/bash
+set -euo pipefail
+
+# MySQL preprocessing runner for AlphaSQLFix
+# - Overrides max_dataset_samples (default: -1 for all samples)
+# - Uses local embedding model path exported via env
+# - Keeps other settings from the provided base config
+
+# Usage:
+#   bash $(dirname "$0")/run_preprocess.sh [BASE_CONFIG]
+# Env:
+#   MAX_SAMPLES    default: -1 (set to specific number or use ALL_SAMPLES=true to process all)
+#   ALL_SAMPLES    if set to true, process all samples (overrides MAX_SAMPLES)
+#   EMBED_PATH     default: "" (通过环境变量设置)
+#   EMBED_DEVICE   default: cuda:1
+#   LLM_PATH       default: "" (通过环境变量设置)
+#   LLM_DEVICE     default: cuda:0
+
+# 获取脚本所在目录
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+
+BASE_CONFIG=${1:-"${PROJECT_ROOT}/alphasql_rstar/config/logiccat_preprocess.yaml"}
+
+# Default values (通过环境变量设置，如果未设置则为空)
+LLM_PATH=${LLM_PATH:-""}
+LLM_DEVICE=${LLM_DEVICE:-cuda:0}
+EMBED_PATH=${EMBED_PATH:-""}
+EMBED_DEVICE=${EMBED_DEVICE:-cuda:1}
+
+# Handle ALL_SAMPLES flag
+if [[ "${ALL_SAMPLES:-false}" == "true" ]]; then
+    MAX_SAMPLES=-1
+    echo "[INFO] ALL_SAMPLES=true: Processing all samples"
+else
+    MAX_SAMPLES=${MAX_SAMPLES:--1}
+fi
+
+# Ensure Python paths
+export PYTHONPATH="${PROJECT_ROOT}:${PYTHONPATH:-}"
+
+# Configure local embedding via env (picked up by alphasql_rstar.llm_call.embedding_utils)
+export USE_LOCAL_EMBEDDING=true
+export LOCAL_EMBEDDING_MODEL_PATH="${EMBED_PATH}"
+export LOCAL_EMBEDDING_DEVICE="${EMBED_DEVICE}"
+
+# MySQL connection settings (从环境变量读取，如果未设置则使用默认值)
+export ALPHASQL_SQL_BACKEND=${ALPHASQL_SQL_BACKEND:-mysql}
+export MYSQL_HOST=${MYSQL_HOST:-""}
+export MYSQL_PORT=${MYSQL_PORT:-3306}
+export MYSQL_USER=${MYSQL_USER:-"root"}
+export MYSQL_PASSWORD=${MYSQL_PASSWORD:-""}
+
+# Create a temporary config overriding max_dataset_samples and optional LLM overrides
+TMP_CFG=$(mktemp /tmp/mysql_preprocess_XXXX.yaml)
+python3 - "$BASE_CONFIG" "$TMP_CFG" "$MAX_SAMPLES" "${LLM_PATH}" "${LLM_DEVICE}" <<'PY'
+import sys, yaml, os
+src, dst, max_samples, llm_path, llm_device = sys.argv[1], sys.argv[2], int(sys.argv[3]), sys.argv[4], sys.argv[5]
+with open(src, 'r', encoding='utf-8') as f:
+    d = yaml.safe_load(f)
+# override only the field we need
+d['max_dataset_samples'] = max_samples
+# optional overrides for local llm
+if llm_path:
+    d['local_model_path'] = llm_path
+if llm_device:
+    d['local_model_device'] = llm_device
+# ensure save dir exists
+save_root_dir = d.get('save_root_dir')
+if save_root_dir:
+    os.makedirs(os.path.join(save_root_dir, d.get('split', 'dev')), exist_ok=True)
+with open(dst, 'w', encoding='utf-8') as f:
+    yaml.safe_dump(d, f, sort_keys=False, allow_unicode=True)
+print(dst)
+PY
+
+echo "[INFO] Using base config: ${BASE_CONFIG}"
+echo "[INFO] Effective config: ${TMP_CFG} (max_dataset_samples=${MAX_SAMPLES})"
+echo "[INFO] Embedding model: ${LOCAL_EMBEDDING_MODEL_PATH} on ${LOCAL_EMBEDDING_DEVICE}"
+echo "[INFO] Local LLM path: ${LLM_PATH}"
+echo "[INFO] Local LLM device: ${LLM_DEVICE}"
+
+# Run the MySQL preprocessor
+python3 -m alphasql_rstar.runner.preprocessor_mysql "${TMP_CFG}"
+
+# Cleanup
+rm -f "${TMP_CFG}"
+echo "[INFO] Preprocessing complete!"
+

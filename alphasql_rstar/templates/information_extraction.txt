@@ -1,0 +1,87 @@
+You are an expert information extraction assistant for Text-to-SQL tasks. Your task is to analyze the given question and database schema, then extract structured information that will help generate accurate SQL queries.
+
+You need to extract the following information from the question and schema:
+
+1. **Entities**: Key entities mentioned in the question (e.g., objects, concepts, attributes)
+2. **Relations**: Relationships between entities or between entities and database elements
+3. **Intent**: The main intent or goal of the question
+4. **Reasoning Type**: The type of reasoning required (e.g., "mathematical logic reasoning", "physical knowledge reasoning", "common sense understanding reasoning", "ideal hypothesis reasoning")
+5. **Numerical Values**: Any numerical values mentioned in the question
+6. **Units**: Units of measurement or conversion information
+7. **Foreign Keys**: Foreign key relationships relevant to the question
+8. **Primary Keys**: Primary key information for relevant tables
+9. **Table Info**: Detailed information about relevant tables and columns
+
+**************************
+Example:
+
+Database Schema:
+CREATE TABLE aircraft 
+(
+    `Aircraft_ID` INTEGER NOT NULL,
+    `Aircraft` VARCHAR(50), -- Column Description: 飞机的名称或型号（例如：Robinson R-22）
+    `Total_Disk_Area` FLOAT, -- Column Description: 飞机的总旋翼盘面积（例如：497 ft² (46.2 m²)）
+    `Max_Disk_Loading` FLOAT, -- Column Description: 飞机的最大旋翼盘载荷（例如：2.6 lb/ft² (14 kg/m²)）
+    `Max_Gross_Weight` FLOAT, -- Column Description: 飞机的最大总重量（例如：1,370 lb (635 kg)）
+    PRIMARY KEY (`Aircraft_ID`)
+);
+
+Question:
+If a Robinson R-22 helicopter has a total rotor disc area of 46.2 square meters and a maximum rotor disc loading of 14 kilograms per square meter, what is its lift under maximum gross weight?
+
+Hint:
+Robinson R-22 refers to Aircraft = 'Robinson R-22'; lift refers to Max_Gross_Weight = Total_Disk_Area × Max_Disk_Loading
+
+Extracted Information:
+```python
+{
+    'entities': ['Robinson R-22 helicopter', 'total rotor disc area 46.2 m²', 'maximum rotor disc loading 14 kg/m²'],
+    'relations': ['helicopter_to_specs (Robinson R-22 → aircraft specifications)', 'lift_calculation (Max_Gross_Weight = Total_Disk_Area × Max_Disk_Loading)'],
+    'intent': 'calculate_lift_under_max_gross_weight',
+    'reasoning_type': 'physical knowledge reasoning',
+    'numerical_values': [46.2, 14],
+    'units': {
+        'area': 'm² (square meters)',
+        'loading': 'kg/m² (kilograms per square meter)',
+        'lift': 'kg (kilograms, derived from 46.2 m² × 14 kg/m²)',
+        'conversion': 'Lift = Total_Disk_Area × Max_Disk_Loading'
+    },
+    'foreign_keys': 'This issue does not provide foreign keys',
+    'primary_keys': [{'pk_table': 'aircraft', 'pk_column': 'Aircraft_ID'}],
+    'tableinfo': {
+        'AirCraft.aircraft': [
+            {'column': 'Aircraft', 'type': 'VARCHAR(50)', 'primary_key': False, 'comment': '飞机的名称或型号（例如：Robinson R-22）', 'examples': ['Robinson R-22', 'Bell 206B3 JetRanger']},
+            {'column': 'Total_Disk_Area', 'type': 'FLOAT', 'primary_key': False, 'comment': '飞机的总旋翼盘面积（例如：497 ft² (46.2 m²)）', 'examples': ['46.2', '81.1']},
+            {'column': 'Max_Disk_Loading', 'type': 'FLOAT', 'primary_key': False, 'comment': '飞机的最大旋翼盘载荷（例如：2.6 lb/ft² (14 kg/m²)）', 'examples': ['14.0', '18.0']},
+            {'column': 'Max_Gross_Weight', 'type': 'FLOAT', 'primary_key': False, 'comment': '飞机的最大总重量（例如：1,370 lb (635 kg)）', 'examples': ['635.0', '1451.0']}
+        ]
+    }
+}
+```
+
+**************************
+
+Now, extract the information for the real question. You must output a valid Python dictionary in the exact format shown above.
+
+Important guidelines:
+- **Entities**: Extract all key entities mentioned in the question, including objects, attributes, and concepts
+- **Relations**: Identify relationships between entities, or mappings from entities to database elements
+- **Intent**: Summarize the main goal in a concise phrase (use snake_case)
+- **Reasoning Type**: Identify the reasoning type(s) required (common types: "mathematical logic reasoning", "physical knowledge reasoning", "common sense understanding reasoning", "ideal hypothesis reasoning")
+- **Numerical Values**: Extract all numerical values mentioned in the question as a list
+- **Units**: Extract units of measurement and any conversion formulas
+- **Foreign Keys**: Extract foreign key relationships as a list of dictionaries with 'fk_table', 'fk_column', 'ref_table', 'ref_column', or use the string "This issue does not provide foreign keys" if no foreign keys are relevant
+- **Primary Keys**: Extract primary key information for relevant tables as a list of dictionaries with 'pk_table' and 'pk_column'
+- **Table Info**: Extract detailed information about relevant tables and columns, including column names, types, primary_key status, comments, and examples
+
+Database Schema:
+{SCHEMA_CONTEXT}
+
+Question:
+{QUESTION}
+
+Hint:
+{HINT}
+
+Please output only the Python dictionary in the exact format shown in the example, without any additional explanation or markdown formatting. The output should be a valid Python dictionary that can be evaluated with `ast.literal_eval()`.
+

@@ -1,0 +1,81 @@
+You are an AI assistant to help me identify and explain mathematical formulas or calculations mentioned in the question. Your task is to recognize any formulas, equations, or calculation expressions in the question and convert them into SQL-compatible expressions that can be used in the SQL query.
+
+**************************
+Example 1:
+
+Database Schema:
+CREATE TABLE aircraft
+(
+    `aircraft_id` INTEGER NOT NULL,
+    `max_gross_weight` REAL, -- Column Description: maximum gross weight in pounds
+    `rotor_diameter` REAL, -- Column Description: rotor diameter in feet
+    PRIMARY KEY (`aircraft_id`)
+);
+
+Question:
+Calculate what is the rotor disk loading of the Robinson R-22 helicopter at its maximum gross weight?
+
+Hint:
+rotor disk loading refers to max_gross_weight / (π * (rotor_diameter / 2)^2); Robinson R-22 refers to aircraft_name = 'Robinson R-22'
+
+Answer:
+The question asks for "rotor disk loading", which is a calculated value. The formula is: rotor disk loading = max_gross_weight / (π * (rotor_diameter / 2)^2). In SQL, this can be expressed as: `max_gross_weight / (3.14159 * POWER(rotor_diameter / 2, 2))` or `max_gross_weight / (3.14159 * (rotor_diameter / 2) * (rotor_diameter / 2))`.
+
+**************************
+Example 2:
+
+Database Schema:
+CREATE TABLE products
+(
+    `product_id` INTEGER NOT NULL,
+    `price` REAL, -- Column Description: product price in dollars
+    `discount_rate` REAL, -- Column Description: discount rate as percentage (0-100)
+    `quantity` INTEGER, -- Column Description: quantity purchased
+    PRIMARY KEY (`product_id`)
+);
+
+Question:
+What is the total cost after applying a 10% discount for products with quantity greater than 5?
+
+Hint:
+total cost after discount refers to (price * quantity) * (1 - discount_rate / 100); quantity greater than 5 refers to quantity > 5
+
+Answer:
+The question involves a calculation: total cost after discount = (price * quantity) * (1 - discount_rate / 100). In SQL, this can be expressed as: `(price * quantity) * (1 - discount_rate / 100.0)`. Additionally, for the 10% discount case, it can be written as: `(price * quantity) * 0.9`.
+
+**************************
+Example 3:
+
+Database Schema:
+CREATE TABLE employees
+(
+    `employee_id` INTEGER NOT NULL,
+    `salary` REAL, -- Column Description: annual salary in dollars
+    `bonus_percentage` REAL, -- Column Description: bonus percentage (0-100)
+    `years_of_service` INTEGER, -- Column Description: years of service
+    PRIMARY KEY (`employee_id`)
+);
+
+Question:
+Calculate the average compensation (salary + bonus) for employees with more than 10 years of service, where bonus = salary * bonus_percentage / 100.
+
+Hint:
+compensation refers to salary + (salary * bonus_percentage / 100); more than 10 years refers to years_of_service > 10
+
+Answer:
+The question requires calculating "compensation" which is defined as salary + bonus, where bonus = salary * bonus_percentage / 100. The formula is: compensation = salary + (salary * bonus_percentage / 100). In SQL, this can be expressed as: `salary + (salary * bonus_percentage / 100.0)` or simplified as: `salary * (1 + bonus_percentage / 100.0)`.
+
+**************************
+
+Now, answer the real question, and you need to follow the answer style of the above examples (identify the formula/calculation and explain how to express it in SQL, answer in 2-3 sentences).
+
+Database Schema:
+{SCHEMA_CONTEXT}
+
+Question:
+{QUESTION}
+
+Hint:
+{HINT}
+
+Answer:
